@@ -1,0 +1,18 @@
+{
+  "configurations": [
+    {
+      "name": "STM32",
+      "includePath": [
+        "${workspaceFolder}/**"
+      ],
+      "defines": [
+        "DAC1"             // 开启调试条件编译
+      ],
+      "compilerPath": "C:/Keil_v5/ARM/ARMCC/bin/armcc.exe", // 或你自己的交叉编译器路径
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "gcc-arm"
+    }
+  ],
+  "version": 4
+}

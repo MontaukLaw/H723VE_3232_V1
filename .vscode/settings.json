@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.cjson": "jsonc",
+        "*.wxss": "css",
+        "*.wxs": "javascript",
+        "user_comm.h": "c",
+        "stdint.h": "c",
+        "main.h": "c",
+        "stm32h7xx_hal.h": "c",
+        "tim.h": "c",
+        "stdbool.h": "c",
+        "assert.h": "c",
+        "stm32h7xx_hal_dac.h": "c",
+        "stm32h7xx_hal_gpio.h": "c",
+        "usart.h": "c"
+    }
+}
