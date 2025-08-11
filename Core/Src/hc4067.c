@@ -12,7 +12,7 @@ void set_wave_ch_with_wave_ch_idx(uint16_t wave_ch)
         HAL_GPIO_WritePin(HC4067_OUT1_S0_GPIO_Port, HC4067_OUT1_S0_Pin, (wave_ch_idx & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
         HAL_GPIO_WritePin(HC4067_OUT1_S1_GPIO_Port, HC4067_OUT1_S1_Pin, (wave_ch_idx & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
         HAL_GPIO_WritePin(HC4067_OUT1_S2_GPIO_Port, HC4067_OUT1_S2_Pin, (wave_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(HC4067_OUT1_S3_GPIO_Port, HC4067_OUT1_S3_Pin, (wave_ch_idx & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(HC4067_OUT1_S3_GPIO_Port, HC4067_OUT1_S3_Pin, (wave_ch_idx & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
     }
     else
     {

@@ -1,7 +1,7 @@
 #include "user_comm.h"
 
-__attribute__((section("dma_buffer"), aligned(32)))
-uint32_t adc131_data_buf[TOTAL_POINT_NUMBER] = {0};
+__attribute__((section("dma_buffer"), aligned(32))) 
+float adc131_data_buf[TOTAL_POINT_NUMBER] = {0};
 
 __attribute__((section("dma_buffer"), aligned(32)))
 uint16_t adc_data_buf[ADC_BUF_SIZE] = {0};
@@ -300,7 +300,7 @@ void save_data(void)
 {
     static uint16_t point_idx = 0;
 
-    adc131_data_buf[point_idx] = adc_mapped;
+    adc131_data_buf[point_idx] = (float)adc_mapped / ADC_SCALE;
     point_idx++;
     if (point_idx >= TOTAL_POINT_NUMBER)
     {

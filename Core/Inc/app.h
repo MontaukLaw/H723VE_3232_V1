@@ -17,7 +17,7 @@ void main_hc4067_test(void);
 
 void main_task(void);
 
-extern uint32_t adc131_data_buf[];
+extern float adc131_data_buf[];
 extern __IO uint8_t uart1_busy;
 
 #endif /* __APP_H_ */

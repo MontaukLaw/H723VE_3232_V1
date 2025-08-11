@@ -3615,9 +3615,9 @@
       </Doc>
       <Doc>
         <Name>..\Core\Src\comm.c</Name>
-        <ColumnNumber>23</ColumnNumber>
+        <ColumnNumber>1</ColumnNumber>
         <TopLine>42</TopLine>
-        <CurrentLine>66</CurrentLine>
+        <CurrentLine>61</CurrentLine>
         <Folding>1</Folding>
         <ContractedFolders></ContractedFolders>
         <PaneID>0</PaneID>
