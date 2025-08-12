@@ -61,7 +61,7 @@ static uint32_t get_device_id(void)
 }
 
 void init_response_packet(response_packet_t *packet)
-{
+{ 
     memset(packet, 0, sizeof(response_packet_t));
     // always same head
     memcpy(packet->head, HEAD_DATA, 4);

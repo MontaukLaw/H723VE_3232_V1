@@ -23,8 +23,7 @@
 #include "hc4067.h"
 #include "comm.h"
 
-
-#define ADC_SCALE 100
+#define ADC_SCALE 1000
 
 #define MAX_FRAME_DATA_SEG_LEN 7000
 #define PER_SENSOR_DATA_LEN 0x06

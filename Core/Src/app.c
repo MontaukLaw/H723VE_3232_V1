@@ -1,7 +1,6 @@
 #include "user_comm.h"
 
-__attribute__((section("dma_buffer"), aligned(32))) 
-float adc131_data_buf[TOTAL_POINT_NUMBER] = {0};
+__attribute__((section("dma_buffer"), aligned(32))) float adc131_data_buf[TOTAL_POINT_NUMBER] = {0};
 
 __attribute__((section("dma_buffer"), aligned(32)))
 uint16_t adc_data_buf[ADC_BUF_SIZE] = {0};
@@ -270,17 +269,27 @@ uint16_t change_hc4067_ch(void)
     set_adc_ch_with_adc_ch_idx(adc_ch);
     turn_on_wave_ch(wave_ch);
     turn_on_adc_ch(adc_ch);
-
-    adc_ch++;
-    if (adc_ch >= ADC_CH_MAX)
+    wave_ch++;
+    if (wave_ch >= WAVE_CH_MAX)
     {
-        adc_ch = 0;
-        wave_ch++;
-        if (wave_ch >= WAVE_CH_MAX)
+        adc_ch++;
+        if (adc_ch >= ADC_CH_MAX)
         {
-            wave_ch = 0; // 重置波形通道
+            adc_ch = 0; // 重置ADC通道
         }
+        wave_ch = 0; // 重置波形通道
     }
+
+    // adc_ch++;
+    // if (adc_ch >= ADC_CH_MAX)
+    // {
+    //     adc_ch = 0;
+    //     wave_ch++;
+    //     if (wave_ch >= WAVE_CH_MAX)
+    //     {
+    //         wave_ch = 0; // 重置波形通道
+    //     }
+    // }
 
     return wave_ch * ADC_CH_MAX + adc_ch; // 返回当前的通道组合
 }
@@ -354,8 +363,10 @@ void main_task(void)
         change_hc4067_ch();
         start_dac_dma();
     }
-    if (peroid_counter == 0 || peroid_counter == 1)
+    if (peroid_counter == 1)
     {
+        // 关门
+        // turn_all_hc4067_off();
         // start_dac_dma();
     }
 
@@ -364,15 +375,18 @@ void main_task(void)
 
     // step 3 获取数据
     // 7us是极限了, 再多会有问题.
-    delay_us(7); // delay以获取最佳线性度
-
+    // delay_us(7); // delay以获取最佳线性度
+    delay_us(5);
+    if (peroid_counter == 0)
+    {
+        // 关门
+        turn_all_hc4067_off();
+    }
     peroid_counter++;
     if (peroid_counter >= PERIOD_FLAGS_MAX)
     {
         save_data();
         peroid_counter = 0; // 重置周期计数器
-        // 关门
-        turn_all_hc4067_off();
     }
 
     ads131_data_ready = 0;
