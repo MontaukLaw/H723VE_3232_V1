@@ -121,6 +121,8 @@ int main(void)
 
     start_uart_rx();
 
+    global_ver_init();
+
     /* USER CODE END 2 */
 
     /* Infinite loop */

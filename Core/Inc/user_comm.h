@@ -22,8 +22,18 @@
 #include "dac_app.h"
 #include "hc4067.h"
 #include "comm.h"
+#include "algorithm.h"
+#include "algorithm_ai.h"
 
-#define ADC_SCALE 1000
+#define EMA_DRIFT 1
+
+#define AUTO_AGC_THRESHOLD 5.0f
+#define ZERO_INIT_TIMES 30
+
+#define ENABLE_IIR 0
+#define IIR_ALPHA 0.7f
+
+#define ADC_SCALE 2000
 
 #define MAX_FRAME_DATA_SEG_LEN 7000
 #define PER_SENSOR_DATA_LEN 0x06
@@ -55,11 +65,34 @@
 #define STANDARD_CMD_STATUS_SUCESS 0x0100 // 注意大小端
 #define STANDARD_CMD_STATUS_FAIL 0x0000   // 注意大小端
 
+#define CALIB_BASELINE_A 0.25f
+#define CALIB_NOISE_A 0.1f
+
+#define IDEL_BASELINE_A 0.05f
+#define IDEL_NOISE_A IDEL_BASELINE_A
+
+#define ST_IDLE 0
+#define ST_TOUCHING 1
+
+#define INIT_FRAMES 40
+
+#define TOUCHING_THRESHOLD_MULTIPLIER 3.0f
+
 typedef struct g_point
 {
     uint16_t adc_idx;
     uint16_t wave_idx;
 } g_point_t;
+
+
+typedef struct g_ver_t
+{
+    float baseline[TOTAL_SENSOR_NUMBER];
+    bool initialized;
+    float base_noise[TOTAL_SENSOR_NUMBER];
+    uint8_t state;
+
+} g_ver;
 
 typedef enum
 {

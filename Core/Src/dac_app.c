@@ -21,7 +21,8 @@ void get_half_sine_wave(void)
             // +1 是为了把 sin(w) 的范围 [-1, 1] 提升到 [0, 2]
 
             sine_val[idx] = (sin(w)) * DAC_MAX_VALUE;
-            ///sine_val[idx] = DAC_MAX_VALUE;
+            // sine_val[idx] = (cos(w)) * DAC_MAX_VALUE;
+            // sine_val[idx] = DAC_MAX_VALUE;
             // sine_val[idx] = 0;
             // sine_val[idx] = 256;
             // sine_val[idx] = 4095;

@@ -13,6 +13,11 @@
         "stm32h7xx_hal_dac.h": "c",
         "stm32h7xx_hal_gpio.h": "c",
         "usart.h": "c",
-        "dac.h": "c"
+        "dac.h": "c",
+        "math.h": "c",
+        "algorithm.h": "c",
+        "hc4067.h": "c",
+        "stm32h723xx.h": "c",
+        "algorithm_ai.h": "c"
     }
 }

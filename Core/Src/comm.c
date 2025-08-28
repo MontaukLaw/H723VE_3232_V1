@@ -1,11 +1,11 @@
 #include "user_comm.h"
 
 __attribute__((section("dma_buffer"), aligned(32))) static response_packet_t resp_packet_s;
+
 static __IO uint16_t frame_id = 0;
 static __IO uint8_t got_rx = 0;
-static __IO uint8_t if_get_data = 0;
+static __IO uint8_t if_get_data = 1;
 
-float adc_final_result[TOTAL_SENSOR_NUMBER];
 const uint8_t HEAD_DATA[] = {0xff, 0xff, 0x06, 0x09};
 const uint8_t DEVICE_INFO_DATA[] = {0x53, 0x59, 0x43, 0x4D, 0x37, 0x32, 0x33, 0x2D, 0x31, 0x30, 0x32, 0x34, 0x00};
 
@@ -25,18 +25,26 @@ static void trans_uint16_to_uint8(uint8_t *data, uint16_t len)
 
     for (adc_result_idx = 0; adc_result_idx < TOTAL_SENSOR_NUMBER; adc_result_idx++)
     {
-        int_part = (uint32_t)(adc131_data_buf[adc_result_idx]);
-        data[adc_result_idx * PER_SENSOR_DATA_LEN + 0] = (int_part & 0xFF0000) >> 16;
-        data[adc_result_idx * PER_SENSOR_DATA_LEN + 1] = (int_part & 0xFF00) >> 8;
-        data[adc_result_idx * PER_SENSOR_DATA_LEN + 2] = int_part & 0x00FF;
+        if (adc_final_result[adc_result_idx] > 0)
+        {
+            // int_part = (uint32_t)(adc131_data_buf[adc_result_idx]);
+            // adc_final_result
+            int_part = (uint32_t)(adc_final_result[adc_result_idx]);
 
-        flo_part = adc131_data_buf[adc_result_idx] - int_part;
-        flo_to_int = (uint32_t)(flo_part * 1000000); // 放大成整数处理
+            data[adc_result_idx * PER_SENSOR_DATA_LEN + 0] = (int_part & 0xFF0000) >> 16;
+            data[adc_result_idx * PER_SENSOR_DATA_LEN + 1] = (int_part & 0xFF00) >> 8;
+            data[adc_result_idx * PER_SENSOR_DATA_LEN + 2] = int_part & 0x00FF;
 
-        // 小数部分
-        data[adc_result_idx * PER_SENSOR_DATA_LEN + 3] = (flo_to_int & 0xFF0000) >> 16;
-        data[adc_result_idx * PER_SENSOR_DATA_LEN + 4] = (flo_to_int & 0x00FF00) >> 8;
-        data[adc_result_idx * PER_SENSOR_DATA_LEN + 5] = flo_to_int & 0x00FF;
+            // flo_part = adc131_data_buf[adc_result_idx] - int_part;
+            flo_part = adc_final_result[adc_result_idx] - int_part;
+
+            flo_to_int = (uint32_t)(flo_part * 1000000); // 放大成整数处理
+
+            // 小数部分
+            data[adc_result_idx * PER_SENSOR_DATA_LEN + 3] = (flo_to_int & 0xFF0000) >> 16;
+            data[adc_result_idx * PER_SENSOR_DATA_LEN + 4] = (flo_to_int & 0x00FF00) >> 8;
+            data[adc_result_idx * PER_SENSOR_DATA_LEN + 5] = flo_to_int & 0x00FF;
+        }
     }
 }
 
@@ -61,7 +69,7 @@ static uint32_t get_device_id(void)
 }
 
 void init_response_packet(response_packet_t *packet)
-{ 
+{
     memset(packet, 0, sizeof(response_packet_t));
     // always same head
     memcpy(packet->head, HEAD_DATA, 4);
@@ -236,10 +244,13 @@ void uart1_it_handler(void)
 
 void send_ads131_val_to_master(void)
 {
+
     init_response_packet(&resp_packet_s);
 
     resp_packet_s.frame_data.cmd_id = START_TRANS_RESP;
+
     trans_uint16_to_uint8(resp_packet_s.frame_data.data_seg, resp_packet_s.frame_data.data_seg_len);
+
     send_fb_to_master();
 }
 

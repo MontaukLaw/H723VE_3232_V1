@@ -1,5 +1,8 @@
 #include "user_comm.h"
 
+g_ver global_ver = {0};
+__IO uint16_t point_idx = 0;
+
 __attribute__((section("dma_buffer"), aligned(32))) float adc131_data_buf[TOTAL_POINT_NUMBER] = {0};
 
 __attribute__((section("dma_buffer"), aligned(32)))
@@ -18,6 +21,16 @@ __IO static uint8_t time_create_wave = 0;
 
 __IO uint8_t time_to_calculate = 0;
 __IO uint8_t uart1_busy = 0;
+
+volatile float last_iir_adc_val[TOTAL_SENSOR_NUMBER] = {0};
+
+void global_ver_init(void)
+{
+    global_ver.initialized = false;
+    global_ver.state = ST_IDLE;
+    memset(global_ver.baseline, 0, sizeof(global_ver.baseline));
+    memset(global_ver.base_noise, 0, sizeof(global_ver.base_noise));
+}
 
 void delay_init(void)
 {
@@ -269,27 +282,27 @@ uint16_t change_hc4067_ch(void)
     set_adc_ch_with_adc_ch_idx(adc_ch);
     turn_on_wave_ch(wave_ch);
     turn_on_adc_ch(adc_ch);
-    wave_ch++;
-    if (wave_ch >= WAVE_CH_MAX)
-    {
-        adc_ch++;
-        if (adc_ch >= ADC_CH_MAX)
-        {
-            adc_ch = 0; // 重置ADC通道
-        }
-        wave_ch = 0; // 重置波形通道
-    }
-
-    // adc_ch++;
-    // if (adc_ch >= ADC_CH_MAX)
+    // wave_ch++;
+    // if (wave_ch >= WAVE_CH_MAX)
     // {
-    //     adc_ch = 0;
-    //     wave_ch++;
-    //     if (wave_ch >= WAVE_CH_MAX)
+    //     adc_ch++;
+    //     if (adc_ch >= ADC_CH_MAX)
     //     {
-    //         wave_ch = 0; // 重置波形通道
+    //         adc_ch = 0; // 重置ADC通道
     //     }
+    //     wave_ch = 0; // 重置波形通道
     // }
+
+    adc_ch++;
+    if (adc_ch >= ADC_CH_MAX)
+    {
+        adc_ch = 0;
+        wave_ch++;
+        if (wave_ch >= WAVE_CH_MAX)
+        {
+            wave_ch = 0; // 重置波形通道
+        }
+    }
 
     return wave_ch * ADC_CH_MAX + adc_ch; // 返回当前的通道组合
 }
@@ -305,11 +318,65 @@ uint8_t count_peroid(uint8_t *peroid_counter)
     return *peroid_counter;
 }
 
+float low_pass_filter(float input, float prev_output, float alpha)
+{
+    return alpha * input + (1 - alpha) * prev_output;
+}
+
 void save_data(void)
 {
     static uint16_t point_idx = 0;
 
+#if ENABLE_IIR
+
+    float adc_v = low_pass_filter((float)adc_mapped / ADC_SCALE, last_iir_adc_val[point_idx], IIR_ALPHA);
+
+    last_iir_adc_val[point_idx] = adc_v;
+
+    // 实时的
+    adc131_data_buf[point_idx] = adc_v;
+
+#else
+
+#if EMA_DRIFT
+
+    float adc_v = (float)adc_mapped / ADC_SCALE;
+    // adc131_data_buf[point_idx] = adc_v;
+    // 读旧值
+    float b0 = global_ver.baseline[point_idx];
+    float r0 = adc_v - b0; // 用旧基线算残差（用于输出与噪声）
+    float absd = float_absdiff(adc_v, b0);
+
+    if (!global_ver.initialized)
+    {
+        // 快速收敛阶段：建议仍输出去基线后的值，但可做限幅或标记 calibrating
+        global_ver.baseline[point_idx] = ema_float(b0, adc_v, CALIB_BASELINE_A);
+        global_ver.base_noise[point_idx] = ema_float(global_ver.base_noise[point_idx], absd, CALIB_NOISE_A);
+
+        // 方案A：输出残差（推荐，别全置零）
+        // adc131_data_buf[point_idx] = r0;
+        adc_final_result[point_idx] = r0;
+        // 方案B：需要静默可限幅：adc131_data_buf[point_idx] = clamp(r0, -CALIB_OUT_MAX, CALIB_OUT_MAX);
+    }
+    else
+    {
+        if (global_ver.state == ST_IDLE)
+        {
+            // 空闲：正常跟踪
+            global_ver.baseline[point_idx] = ema_float(b0, adc_v, IDEL_BASELINE_A);
+            global_ver.base_noise[point_idx] = ema_float(global_ver.base_noise[point_idx], absd, IDEL_NOISE_A);
+        }
+
+        // 输出用旧基线得到的残差（r0），保证噪声与输出一致
+        // adc131_data_buf[point_idx] = r0;
+        adc_final_result[point_idx] = r0;
+    }
+#else
     adc131_data_buf[point_idx] = (float)adc_mapped / ADC_SCALE;
+#endif
+
+#endif
+
     point_idx++;
     if (point_idx >= TOTAL_POINT_NUMBER)
     {
@@ -324,6 +391,14 @@ uint8_t calculate_data(void)
 {
     if (time_to_calculate == 0)
         return 0;
+
+    // temp_drift_process();
+
+    // 初始化检查
+    check_initialized();
+
+    // check state
+    check_state();
 
     send_ads131_val_to_master();
 
@@ -366,7 +441,7 @@ void main_task(void)
     if (peroid_counter == 1)
     {
         // 关门
-        // turn_all_hc4067_off();
+        turn_all_hc4067_off();
         // start_dac_dma();
     }
 
@@ -376,18 +451,32 @@ void main_task(void)
     // step 3 获取数据
     // 7us是极限了, 再多会有问题.
     // delay_us(7); // delay以获取最佳线性度
-    delay_us(5);
     if (peroid_counter == 0)
     {
+        // delay_us(7);
         // 关门
-        turn_all_hc4067_off();
+        // turn_all_hc4067_off();
     }
     peroid_counter++;
     if (peroid_counter >= PERIOD_FLAGS_MAX)
     {
-        save_data();
+        // save_data();
+        save_adc_data();
+        change_point_idx();
         peroid_counter = 0; // 重置周期计数器
     }
 
     ads131_data_ready = 0;
+}
+
+void change_point_idx(void)
+{
+    point_idx++;
+    if (point_idx >= TOTAL_POINT_NUMBER)
+    {
+        // 指示周期开始
+        // HAL_GPIO_TogglePin(TEST_PORT_2_GPIO_Port, TEST_PORT_2_Pin);
+        time_to_calculate = 1;
+        point_idx = 0; // 重置索引
+    }
 }
