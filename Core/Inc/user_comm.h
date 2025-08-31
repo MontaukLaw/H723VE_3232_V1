@@ -25,13 +25,13 @@
 #include "algorithm.h"
 #include "algorithm_ai.h"
 
-#define EMA_DRIFT 1
+#define EMA_DRIFT 0
 
 #define AUTO_AGC_THRESHOLD 5.0f
 #define ZERO_INIT_TIMES 30
 
-#define ENABLE_IIR 0
-#define IIR_ALPHA 0.7f
+#define ENABLE_IIR 1
+#define IIR_ALPHA 0.05f
 
 #define ADC_SCALE 2000
 

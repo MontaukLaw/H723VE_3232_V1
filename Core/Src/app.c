@@ -336,6 +336,8 @@ void save_data(void)
     // 实时的
     adc131_data_buf[point_idx] = adc_v;
 
+    adc_final_result[point_idx] = adc_v;
+
 #else
 
 #if EMA_DRIFT
@@ -434,6 +436,7 @@ void main_task(void)
 
     if (peroid_counter == 0)
     {
+        HAL_GPIO_WritePin(TEST_PORT_2_GPIO_Port, TEST_PORT_2_Pin, GPIO_PIN_SET);
         // peroid 0 切换输入输出通道
         change_hc4067_ch();
         start_dac_dma();
@@ -460,9 +463,13 @@ void main_task(void)
     peroid_counter++;
     if (peroid_counter >= PERIOD_FLAGS_MAX)
     {
-        // save_data();
-        save_adc_data();
+        save_data();
+        HAL_GPIO_WritePin(TEST_PORT_2_GPIO_Port, TEST_PORT_2_Pin, GPIO_PIN_RESET);
+
+        // save_adc_data();
+
         change_point_idx();
+        
         peroid_counter = 0; // 重置周期计数器
     }
 

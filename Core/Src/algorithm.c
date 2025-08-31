@@ -239,6 +239,9 @@ void save_adc_data(void)
 {
 
     float adc_v = (float)adc_mapped / ADC_SCALE;
+    adc_final_result[point_idx] = adc_v;
+    return;
+
     // adc131_data_buf[point_idx] = adc_v;
     // 读旧值
     float b0 = global_ver.baseline[point_idx];
