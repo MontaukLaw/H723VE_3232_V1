@@ -142,11 +142,13 @@ int main(void)
 
         // printf("System start >>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
         // HAL_Delay(1000);
-			
+
         // comm_handler();
         // dac_20k_main_task_origin();
 
         geer_main_task();
+
+        // dac_20k_main_task_geer();
 
         // HAL_Delay(1000);
         // uart_test();

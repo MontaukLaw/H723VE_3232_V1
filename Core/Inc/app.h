@@ -39,6 +39,8 @@ void save_data_directly(uint16_t point_id);
 
 void cp_all_data_to_ram_u16(void);
 
+void cp_all_float_data_to_ram_u16(void);
+
 extern float adc131_data_buf[];
 
 extern __IO uint8_t uart1_busy;

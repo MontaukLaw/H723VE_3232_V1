@@ -445,19 +445,18 @@ void cp_all_data_to_ram_u16(void)
     }
 }
 
-
 // 把数据从adc_final_result复制到tx发送缓存中
-void cp_all_data_to_ram(void)
+void cp_all_float_data_to_ram_u16(void)
 { 
     // memcpy((uint8_t *)adc_result_16bit, (uint8_t *)adc_result_16bit_buf, sizeof(uint16_t) * TOTAL_POINT_NUMBER);
-    memset(adc_result_16bit, 0, sizeof(uint16_t) * TOTAL_POINT_NUMBER);
+    // memset(adc_result_16bit, 0, sizeof(uint16_t) * TOTAL_POINT_NUMBER);
     uint16_t i = 0;
     for (i = 0; i < TOTAL_POINT_NUMBER; i++)
     {
-        if (adc_final_result[i] > 65535.0f)
-        {
-            adc_final_result[i] = 65535.0f;
-        }
+        // if (adc_final_result[i] > 65535.0f)
+        // {
+        //     adc_final_result[i] = 65535.0f;
+        // }
         adc_result_16bit[i] = (uint16_t)adc_final_result[i];
     }
 }

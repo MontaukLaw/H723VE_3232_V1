@@ -34,6 +34,7 @@ void dac_20k_main_task_geer(void)
     else if (peroid_counter == 5)
     {
         save_data_directly(wave_ch + adc_ch * WAVE_CH_MAX);
+        // save_data_simple(wave_ch + adc_ch * WAVE_CH_MAX);
     }
 
     // if (wave_ch == 5 && adc_ch == 0)
@@ -51,13 +52,19 @@ void dac_20k_main_task_geer(void)
     {
 
         change_hc4067_ch();
-        cp_all_data_to_ram_u16();
+        if (time_to_calculate)
+        {
+            // cp_all_float_data_to_ram_u16();
+            cp_all_data_to_ram_u16();
+            time_to_calculate = 0;
+        }
+        // cp_all_float_data_to_ram_u16();
+        // cp_all_data_to_ram_u16();
         peroid_counter = 0;
     }
 
     ads131_data_ready = 0;
 }
-
 
 void dac_20k_main_task_origin(void)
 {
@@ -135,7 +142,6 @@ void change_hc4067_ch(void)
         adc_ch++;
         if (adc_ch >= ADC_CH_MAX)
         {
-            // ready_to_calculate = 1;
             time_to_calculate = 1;
 
             adc_ch = 0; // 重置ADC通道
