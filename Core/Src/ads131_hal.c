@@ -30,7 +30,7 @@ uint8_t spiSendReceiveByte(const uint8_t dataTx)
     // SSI TX & RX
     uint8_t dataRx = 0;
 
-    HAL_SPI_TransmitReceive(&hspi2, (uint8_t *)&dataTx, (uint8_t *)&dataRx, 1, 1000);
+    HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)&dataTx, (uint8_t *)&dataRx, 1, 1000);
     // HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)&dataTx, (uint8_t *)&dataRx, 1);
 
     return dataRx;
@@ -74,7 +74,9 @@ void spiSendReceiveArrays(const uint8_t dataTx[], uint8_t dataRx[], const uint8_
 
     // Set the nCS pin LOW
     // setCS(LOW);
-    ADS131_CS_GPIO_Port->BSRR = (uint32_t)ADS131_CS_Pin << 16U;
+    // ADS131_CS_GPIO_Port->BSRR = (uint32_t)ADS131_CS_Pin << 16U;
+  	HAL_GPIO_WritePin(ADS131_CS_GPIO_Port, ADS131_CS_Pin, GPIO_PIN_RESET);
+	
     // Send all dataTx[] bytes on MOSI, and capture all MISO bytes in dataRx[]
     // int i;
     // for (i = 0; i < byteLength; i++)
@@ -82,8 +84,9 @@ void spiSendReceiveArrays(const uint8_t dataTx[], uint8_t dataRx[], const uint8_
     // dataRx[i] = spiSendReceiveByte(dataTx[i]);
     // }
 
-    HAL_SPI_TransmitReceive(&hspi2, (uint8_t *)dataTx, (uint8_t *)dataRx, byteLength, 1000);
-    ADS131_CS_GPIO_Port->BSRR = ADS131_CS_Pin;
+    HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)dataTx, (uint8_t *)dataRx, byteLength, 1000);
+    // ADS131_CS_GPIO_Port->BSRR = ADS131_CS_Pin;
+		HAL_GPIO_WritePin(ADS131_CS_GPIO_Port, ADS131_CS_Pin, GPIO_PIN_SET);
     // Set the nCS pin HIGH
     // setCS(HIGH);
 }
@@ -205,9 +208,9 @@ void get_ads_131_data(void)
 
     memset(ads131_tx_data, 0, sizeof(ads131_tx_data)); // 清空发送数据
     memset(ads131_rx_data, 0, sizeof(ads131_rx_data)); // 清空接收数据
-
+    
     HAL_GPIO_WritePin(ADS131_CS_GPIO_Port, ADS131_CS_Pin, GPIO_PIN_RESET); // 拉低CS
-    HAL_SPI_TransmitReceive(&hspi2, (uint8_t *)ads131_tx_data, (uint8_t *)ads131_rx_data, 9, 1000);
+    HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)ads131_tx_data, (uint8_t *)ads131_rx_data, 9, 1000);
     HAL_GPIO_WritePin(ADS131_CS_GPIO_Port, ADS131_CS_Pin, GPIO_PIN_SET); // 拉高CS
 
     if (ads131_rx_data[0] == 0x05 && (ads131_rx_data[1] == 0x03 || ads131_rx_data[1] == 0x01))
@@ -227,5 +230,4 @@ void get_ads_131_data(void)
     {
         adc_mapped = 0;
     }
-    
 }

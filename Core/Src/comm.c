@@ -3,7 +3,7 @@
 __attribute__((section("dma_buffer"), aligned(32))) static response_packet_t resp_packet_s;
 
 static __IO uint16_t frame_id = 0;
-static __IO uint8_t got_rx = 0;
+__IO uint8_t got_rx = 0;
 static __IO uint8_t if_get_data = 1;
 
 const uint8_t HEAD_DATA[] = {0xff, 0xff, 0x06, 0x09};
@@ -11,6 +11,7 @@ const uint8_t DEVICE_INFO_DATA[] = {0x53, 0x59, 0x43, 0x4D, 0x37, 0x32, 0x33, 0x
 
 __attribute__((section("dma_buffer"), aligned(32)))
 uint8_t uart1_rx_buf[STANDARD_PROTOCAL_LEN];
+
 
 static void trans_uint16_to_uint8(uint8_t *data, uint16_t len)
 {
@@ -252,6 +253,38 @@ void send_ads131_val_to_master(void)
     trans_uint16_to_uint8(resp_packet_s.frame_data.data_seg, resp_packet_s.frame_data.data_seg_len);
 
     send_fb_to_master();
+}
+
+void send_ads131_val_to_udp(void)
+{
+    float flo_part = 0;
+    uint32_t int_part = 0;
+    uint32_t flo_to_int = 0;
+
+    init_response_packet(&resp_packet_s);
+
+    resp_packet_s.frame_data.cmd_id = START_TRANS_RESP;
+
+    // resp_packet_s.frame_data.data_seg, resp_packet_s.frame_data.data_seg_len
+    // 这个还挺重要的. 一定要清零
+    memset(resp_packet_s.frame_data.data_seg, 0, (1024 * 2 + 20));
+
+    uint16_t adc_result_idx = 0;
+
+    for (adc_result_idx = 0; adc_result_idx < TOTAL_SENSOR_NUMBER; adc_result_idx++)
+    {
+        if (adc_final_result_u32[adc_result_idx] > 0)
+        {
+            // 去掉太小的部分
+            int_part = adc_final_result_u32[adc_result_idx];
+
+            resp_packet_s.frame_data.data_seg[adc_result_idx * 2] = int_part & 0x00FF00 >> 8;
+            resp_packet_s.frame_data.data_seg[adc_result_idx * 2 + 1] = (int_part & 0xFF0000) >> 16;
+        }
+     }
+
+    HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&resp_packet_s, (1024 * 2 + 20));
+    uart1_busy = 1; // 设置发送标志
 }
 
 uint8_t if_getting_data(void)

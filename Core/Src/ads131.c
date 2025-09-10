@@ -24,7 +24,7 @@ void spi_3_test(void)
 
     HAL_GPIO_WritePin(ADS131_CS_GPIO_Port, ADS131_CS_Pin, GPIO_PIN_RESET);
 
-    HAL_SPI_TransmitReceive(&hspi2, (uint8_t *)ads_tx_buf, (uint8_t *)dataRx, 5, 1000);
+    HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)ads_tx_buf, (uint8_t *)dataRx, 5, 1000);
 
     HAL_GPIO_WritePin(ADS131_CS_GPIO_Port, ADS131_CS_Pin, GPIO_PIN_SET);
 }
@@ -626,10 +626,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     {
 
         // HAL_GPIO_WritePin(TEST_PORT_2_GPIO_Port, TEST_PORT_2_Pin, GPIO_PIN_SET);
-        get_ads_131_data();
+        // get_ads_131_data();
         // HAL_GPIO_WritePin(TEST_PORT_2_GPIO_Port, TEST_PORT_2_Pin, GPIO_PIN_RESET);
 
-        // HAL_GPIO_TogglePin(TEST_PORT_2_GPIO_Port, TEST_PORT_2_Pin);
         ads131_data_ready = 1; // 设置数据准备好标志
     }
 }

@@ -2,6 +2,7 @@
 #define __USER_COMM_H_
 
 #include <math.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
 #include <stdint.h>
@@ -24,16 +25,21 @@
 #include "comm.h"
 #include "algorithm.h"
 #include "algorithm_ai.h"
+#include "logger.h"
+#include "main_app.h"
+#include "geer_comm.h"
+
+#define ERROR_FEED_BACK_PACK_LEN 5
 
 #define EMA_DRIFT 0
 
 #define AUTO_AGC_THRESHOLD 5.0f
 #define ZERO_INIT_TIMES 30
 
-#define ENABLE_IIR 1
-#define IIR_ALPHA 0.05f
+#define ENABLE_IIR 0
+#define IIR_ALPHA 0.1f
 
-#define ADC_SCALE 2000
+#define ADC_SCALE 20
 
 #define MAX_FRAME_DATA_SEG_LEN 7000
 #define PER_SENSOR_DATA_LEN 0x06
@@ -41,14 +47,16 @@
 #define ADC_BUF_SIZE 100
 #define UART_TX_BUF_SIZE 100
 
-#define MAX_SAMPLES_TIMES 3
-#define MAX_SAPMLES 25
+#define MAX_SAMPLES_TIMES 1
+#define MAX_SAPMLES 270
 #define DAC_LEN (MAX_SAPMLES * MAX_SAMPLES_TIMES)
 
 #define PI 3.1415926
 
-#define DAC_MAX_VALUE 3000 // 256 // 3000 // 4095 // 1000
-#define PERIOD_FLAGS_MAX 3
+#define DAC_FLAT_VAL 100
+#define DAC_MAX_VALUE 4000 // 4000 // 4095 // 256 // 3000 // 4095 // 1000
+#define PERIOD_FLAGS_MAX 8 // 7 // 10
+#define HEADROOM 100
 
 #define WAVE_CH_MAX 32 // 波形通道最大值
 #define ADC_CH_MAX 32  // ADC 通道最大值
@@ -61,6 +69,8 @@
 
 #define UART_RX_BUF_LEN 50
 #define STANDARD_PROTOCAL_LEN UART_RX_BUF_LEN
+
+#define GEER_UART_TX_BUF_LEN 3000
 
 #define STANDARD_CMD_STATUS_SUCESS 0x0100 // 注意大小端
 #define STANDARD_CMD_STATUS_FAIL 0x0000   // 注意大小端
@@ -78,18 +88,95 @@
 
 #define TOUCHING_THRESHOLD_MULTIPLIER 3.0f
 
+#define FW_VERSION_MAJOR 0x01
+#define FW_VERSION_MINOR 0x00
+#define FW_VERSION_PATCH 0x00
+
+#define FW_VERSION_PACK_LEN 34
+
+// Header	Length	Type	Module	CMD Type
+// 1byte	2byte	1byte	1byte	1byte
+// Payload Point*2
+// CRC    Tail
+// 2byte	1byte
+#define GEER_PACK_HEAD 0xA5
+#define GEER_PACK_TAIL 0xD5
+#define BYTES_PER_POINT 2
+#define GEER_DATA_UPLOAD_PACK_LEN (6 + BYTES_PER_POINT * TOTAL_SENSOR_NUMBER + 3)
+
+// 0xFB	无效指令
+// 0xFC	数据长度超限
+// 0xFD	CRC校验失败
+typedef enum
+{
+    NO_ERROR = 0x00,
+    INVALID_CMD = 0xFB,
+    DATA_LEN_EXCEED = 0xFC,
+    CRC_FAIL = 0xFD,
+} GEER_ERROR_CODE;
+
+// 0x0F	软件版本号
+// 0X12	压力获取模块
+// 0x20	升级模块
+typedef enum
+{
+    TEST_EQUIPMENT_TYPE = 0x0F,
+    TEST_EQUIPMENT_MODULE_TYPE = 0x12,
+    TEST_EQUIPMENT_UPGRADE_MODULE = 0x20,
+} GEER_MODULE_TYPE;
+
+typedef enum
+{
+    // 查询
+    GEER_TYPE_QUERY = 0xFF,
+
+    // 压力模块
+    SGCSENSE_PRESSURE_MODULE_FRONT_FACE = 0x20, // front face
+    SGCSENSE_PRESSURE_MODULE_BACK_HEAD = 0x21,  // back face
+    SGCSENSE_PRESSURE_MODULE_2 = 0x22,
+    SGCSENSE_PRESSURE_MODULE_3 = 0x23,
+    SGCSENSE_PRESSURE_MODULE_4 = 0x24,
+    SGCSENSE_PRESSURE_MODULE_5 = 0x25,
+    SGCSENSE_PRESSURE_MODULE_6 = 0x26,
+    SGCSENSE_PRESSURE_MODULE_7 = 0x27,
+    SGCSENSE_PRESSURE_MODULE_8 = 0x28,
+    SGCSENSE_PRESSURE_MODULE_9 = 0x29,
+
+} GEER_EQUP_TYPE;
+
+#define MY_EQUIP_TYPE SGCSENSE_PRESSURE_MODULE_BACK_HEAD
+
+typedef enum
+{
+    GEER_CMD_READ = 0x01,
+    TEST_CMD_MODULE_TYPE = 0x12,
+    TEST_CMD_UPGRADE_MODULE = 0x20,
+} GEER_CMD_TYPE;
+
+typedef struct geer_protocal
+{
+    uint16_t payload_length;
+    GEER_EQUP_TYPE equipment_type;
+    GEER_MODULE_TYPE module;
+    GEER_CMD_TYPE cmd_type;
+    uint8_t payload[UART_RX_BUF_LEN - 8];
+    uint16_t crc;
+} geer_protocal_t;
+
 typedef struct g_point
 {
     uint16_t adc_idx;
     uint16_t wave_idx;
 } g_point_t;
 
-
 typedef struct g_ver_t
 {
-    float baseline[TOTAL_SENSOR_NUMBER];
     bool initialized;
+    float baseline[TOTAL_SENSOR_NUMBER];
     float base_noise[TOTAL_SENSOR_NUMBER];
+
+    uint32_t baseline_u32[TOTAL_SENSOR_NUMBER];
+    uint32_t basenoise_u32[TOTAL_SENSOR_NUMBER];
     uint8_t state;
 
 } g_ver;
@@ -134,5 +221,6 @@ typedef struct g_response_packet_t
     uint16_t whole_packet_len; // 用于统计发送长度
 } response_packet_t;
 
+extern uint8_t uart1_rx_buf[];
 
 #endif

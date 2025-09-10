@@ -30,7 +30,22 @@ float adc_final_result[TOTAL_SENSOR_NUMBER];
 
 // tools
 float ema_float(float y, float x, float a) { return y + a * (x - y); }
+// uint32_t ema_u32(uint32_t y, uint32_t x, uint32_t a, uint32_t b)
+// {
+//     return y + (a * (x - y)) / b;
+// }
+
+uint32_t ema_u32(uint32_t prev, uint32_t x, uint32_t a_num, uint32_t a_den)
+{
+    // y = (a)*prev + (1-a)*x, 其中 a = a_num/a_den
+    // 用 64 位避免溢出，并做 +a_den/2 实现四舍五入，降低系统性偏差
+    uint64_t num = (uint64_t)prev * a_num + (uint64_t)x * (a_den - a_num);
+    return (uint32_t)((num + (a_den >> 1)) / a_den);
+}
+
 float float_absdiff(float a, float b) { return (a > b) ? (a - b) : (b - a); }
+
+uint32_t u32_absdiff(uint32_t a, uint32_t b) { return (a > b) ? (a - b) : (b - a); }
 
 static inline float clampf(float x, float lo, float hi) { return x < lo ? lo : (x > hi ? hi : x); }
 static inline float lpf_step(float y_prev, float x, float a) { return y_prev + a * (x - y_prev); }
@@ -103,10 +118,14 @@ void check_state(void)
 void check_initialized(void)
 {
     static uint8_t init_time = 0;
-    init_time++;
-    if (init_time > INIT_FRAMES && !global_ver.initialized)
+    if (!global_ver.initialized)
     {
-        global_ver.initialized = true;
+        init_time++;
+        if (init_time > INIT_FRAMES)
+        {
+            global_ver.initialized = true;
+            printf("System initialized >>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
+        }
     }
 }
 
@@ -278,4 +297,96 @@ void save_adc_data(void)
 
         // adc_final_result[point_idx] = r0;
     }
+}
+
+void trace_baseline(float adc_v, uint16_t point_idx)
+{
+    // 读旧值
+    float b0 = global_ver.baseline[point_idx];
+    float r0 = adc_v - b0; // 用旧基线算残差（用于输出与噪声）
+    float absd = float_absdiff(adc_v, b0);
+    float n0 = global_ver.base_noise[point_idx];
+    if (!global_ver.initialized)
+    {
+        global_ver.baseline[point_idx] = ema_float(b0, adc_v, 0.8f);
+        global_ver.base_noise[point_idx] = ema_float(n0, absd, 0.8f);
+    }
+    else
+    {
+        global_ver.baseline[point_idx] = ema_float(b0, adc_v, 0.01f);
+        global_ver.base_noise[point_idx] = ema_float(n0, absd, 0.01f);
+    }
+}
+
+void trace_baseline_u32_(uint32_t adc_v, uint16_t point_idx)
+{
+    // 读旧值
+    uint32_t b0 = global_ver.baseline_u32[point_idx];
+    uint32_t r0 = adc_v - b0; // 用旧基线算残差（用于输出与噪声）
+    uint32_t absd = u32_absdiff(adc_v, b0);
+    uint32_t n0 = global_ver.basenoise_u32[point_idx];
+
+    if (!global_ver.initialized)
+    {
+        global_ver.baseline_u32[point_idx] = ema_u32(b0, adc_v, 3, 4);
+        global_ver.basenoise_u32[point_idx] = ema_u32(n0, absd, 3, 4);
+    }
+    else
+    {
+        global_ver.baseline_u32[point_idx] = ema_u32(b0, adc_v, 1, 100);
+        global_ver.basenoise_u32[point_idx] = ema_u32(n0, absd, 1, 100);
+    }
+}
+
+void trace_baseline_u32(uint32_t adc_v, uint16_t point_idx)
+{
+    uint32_t b0 = global_ver.baseline_u32[point_idx];
+    uint32_t n0 = global_ver.basenoise_u32[point_idx];
+
+    // 1) 自适应基线：小残差快跟、大残差慢跟
+    uint32_t resid0 = (adc_v > b0) ? (adc_v - b0) : (b0 - adc_v);
+    uint32_t aB_num, aB_den;
+    if (!global_ver.initialized)
+    {
+        aB_num = 1;
+        aB_den = 8;
+    } // init: 快
+    else if (resid0 < (n0 << 2))
+    {
+        aB_num = 1;
+        aB_den = 64;
+    } // 静稳区：中等
+    else
+    {
+        aB_num = 1;
+        aB_den = 512;
+    } // 有信号：很慢
+
+    uint32_t b1 = ema_u32(b0, adc_v, aB_num, aB_den);
+    global_ver.baseline_u32[point_idx] = b1;
+
+    // 2) 用“新基线”算残差
+    uint32_t absd = (adc_v > b1) ? (adc_v - b1) : (b1 - adc_v);
+
+    // 3) 限幅/门控：避免把信号当噪声学进去（winsorize）
+    //    允许每次最多比当前噪声上升 50%（可调），也设一个噪声地板
+    const uint32_t NOISE_FLOOR = 1; // 视 ADC 量化/环境而定
+    uint32_t rise_cap = n0 + (n0 >> 1) + NOISE_FLOOR;
+    uint32_t absd_clamped = (absd < rise_cap) ? absd : rise_cap;
+
+    // 4) 噪声“慢涨快降”
+    uint32_t aN_up_num = 1, aN_up_den = 64; // 上升很慢
+    uint32_t aN_dn_num = 1, aN_dn_den = 16; // 下降较快
+
+    uint32_t n1;
+    if (absd_clamped > n0)
+        n1 = ema_u32(n0, absd_clamped, aN_up_num, aN_up_den);
+    else
+        n1 = ema_u32(n0, absd_clamped, aN_dn_num, aN_dn_den);
+
+    if (n1 < NOISE_FLOOR)
+        n1 = NOISE_FLOOR;
+
+    global_ver.basenoise_u32[point_idx] = n1;
+
 }

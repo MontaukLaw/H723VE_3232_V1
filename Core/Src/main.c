@@ -103,10 +103,15 @@ int main(void)
     MX_USART1_UART_Init();
     MX_DAC1_Init();
     MX_TIM7_Init();
-    MX_SPI2_Init();
     MX_ADC1_Init();
+    MX_SPI3_Init();
+    MX_UART5_Init();
     /* USER CODE BEGIN 2 */
-    get_half_sine_wave();
+    // get_half_sine_wave();
+    get_sine_wave();
+    // get_straight_wave();
+
+    U5Log_Init(&huart5);
 
     // start_timer7;
     HAL_TIM_Base_Start(&htim7); // 启动定时器7
@@ -122,6 +127,11 @@ int main(void)
     start_uart_rx();
 
     global_ver_init();
+    uint32_t last_tick = HAL_GetTick();
+
+    printf("System start, equipment type %02x\r\n", MY_EQUIP_TYPE);
+
+    turn_all_hc4067_off();
 
     /* USER CODE END 2 */
 
@@ -130,13 +140,50 @@ int main(void)
     while (1)
     {
 
+        // printf("System start >>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
+        // HAL_Delay(1000);
+			
+        // comm_handler();
+        // dac_20k_main_task_origin();
+
+        geer_main_task();
+
+        // HAL_Delay(1000);
+        // uart_test();
+
+        // send_fw_version();
+
+        // start_dac_dma();
+        // delay_us(50);
+
+        // main_app_ads_peroid_test();
+        // main_task();
+
+        // main_hc4067_test();
+
+        // main_hc4067_test_1ch();
+
+        // print_counter++;
+        // printf("Hello DMA LOG! %u\n", print_counter);
+
+        // // print_hellow();
+        // HAL_Delay(1000);
+        // HAL_GPIO_WritePin(ADS131_CS_GPIO_Port, ADS131_CS_Pin, GPIO_PIN_SET); // 拉低CS
+        // HAL_GPIO_WritePin(ADS131_CS_GPIO_Port, ADS131_CS_Pin, GPIO_PIN_RESET); // 拉低CS
+        // if (ads131_data_ready)
+        // {
+        //     ads131_frame_counter();
+        //     get_ads_131_data();
+
+        //     ads131_data_ready = 0;
+        // }
         // main_task_uart_test();
         // main_adc_task();
         // dac_test();
         // main_task_peroid_test();
-        // main_hc4067_test();
 
-        main_task();
+        // main_wave_test();
+
         // HAL_GPIO_WritePin(TEST_PORT_2_GPIO_Port, TEST_PORT_2_Pin, GPIO_PIN_SET); // Set the pin to turn on the LED
         // HAL_GPIO_TogglePin(TEST_PORT_2_GPIO_Port, TEST_PORT_2_Pin); // Toggle the red LED
         // send_ads131_val_to_master();

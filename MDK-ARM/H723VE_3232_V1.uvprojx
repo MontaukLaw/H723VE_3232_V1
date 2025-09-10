@@ -337,7 +337,7 @@
             <v6WtE>0</v6WtE>
             <v6Rtti>0</v6Rtti>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>--diag_suppress=177</MiscControls>
               <Define>USE_PWR_LDO_SUPPLY,USE_HAL_DRIVER,STM32H723xx</Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include</IncludePath>
@@ -413,6 +413,31 @@
               <FileName>dac_app.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\dac_app.c</FilePath>
+            </File>
+            <File>
+              <FileName>hc4067.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\hc4067.c</FilePath>
+            </File>
+            <File>
+              <FileName>comm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\comm.c</FilePath>
+            </File>
+            <File>
+              <FileName>algorithm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\algorithm.c</FilePath>
+            </File>
+            <File>
+              <FileName>algorithm_ai.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\algorithm_ai.c</FilePath>
+            </File>
+            <File>
+              <FileName>logger.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\logger.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
@@ -674,24 +699,14 @@
               <FilePath>../Core/Src/stm32h7xx_hal_msp.c</FilePath>
             </File>
             <File>
-              <FileName>hc4067.c</FileName>
+              <FileName>main_app.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Core\Src\hc4067.c</FilePath>
+              <FilePath>..\Core\Src\main_app.c</FilePath>
             </File>
             <File>
-              <FileName>comm.c</FileName>
+              <FileName>geer_comm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Core\Src\comm.c</FilePath>
-            </File>
-            <File>
-              <FileName>algorithm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\algorithm.c</FilePath>
-            </File>
-            <File>
-              <FileName>algorithm_ai.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\algorithm_ai.c</FilePath>
+              <FilePath>..\Core\Src\geer_comm.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -11,5 +11,12 @@ void turn_on_wave_ch(uint16_t wave_ch);
 
 void turn_on_adc_ch(uint16_t adc_ch);
 
+void wave_ch_on(uint16_t wave_ch);
+
+void wave_ch_off(uint16_t wave_ch);
+
+void adc_ch_on(uint16_t adc_ch);
+
+void adc_ch_off(uint16_t adc_ch);
 
 #endif // _HC4067_H_

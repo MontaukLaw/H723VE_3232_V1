@@ -18,6 +18,10 @@
         "algorithm.h": "c",
         "hc4067.h": "c",
         "stm32h723xx.h": "c",
-        "algorithm_ai.h": "c"
-    }
+        "algorithm_ai.h": "c",
+        "logger.h": "c",
+        "stdio.h": "c",
+        "main_app.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

@@ -21,6 +21,24 @@ void main_task(void);
 
 void global_ver_init(void);
 
+void main_wave_test(void);
+
+void change_hc4067_ch(void);
+
+uint8_t calculate_data(void);
+
+void save_data(void);
+
+void change_point_idx(void);
+
+void main_hc4067_test_1ch(void);
+
+void save_data_simple(uint16_t point_id);
+
+void save_data_directly(uint16_t point_id);
+
+void cp_all_data_to_ram_u16(void);
+
 extern float adc131_data_buf[];
 
 extern __IO uint8_t uart1_busy;
@@ -28,6 +46,10 @@ extern __IO uint8_t uart1_busy;
 extern __IO uint8_t time_to_calculate;
 
 extern __IO uint16_t point_idx;
+
+extern __IO uint32_t adc_final_result_u32[];
+
+extern __IO uint16_t adc_result_16bit[];
 
 // extern g_ver global_ver;
 

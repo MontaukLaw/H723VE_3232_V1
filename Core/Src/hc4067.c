@@ -57,7 +57,54 @@ void turn_on_wave_ch(uint16_t wave_ch)
     {
         HAL_GPIO_WritePin(HC4067_OUT2_EN_GPIO_Port, HC4067_OUT2_EN_Pin, GPIO_PIN_RESET);
     }
-    
+}
+
+void adc_ch_on(uint16_t adc_ch)
+{
+    if (adc_ch < ADC_CH_MAX / 2)
+    {
+        HAL_GPIO_WritePin(HC4067_IN1_EN_GPIO_Port, HC4067_IN1_EN_Pin, GPIO_PIN_RESET);
+    }
+    else
+    {
+        HAL_GPIO_WritePin(HC4067_IN2_EN_GPIO_Port, HC4067_IN2_EN_Pin, GPIO_PIN_RESET);
+    }
+}
+
+void adc_ch_off(uint16_t adc_ch)
+{
+    if (adc_ch < ADC_CH_MAX / 2)
+    {
+        HAL_GPIO_WritePin(HC4067_IN1_EN_GPIO_Port, HC4067_IN1_EN_Pin, GPIO_PIN_SET);
+    }
+    else
+    {
+        HAL_GPIO_WritePin(HC4067_IN2_EN_GPIO_Port, HC4067_IN2_EN_Pin, GPIO_PIN_SET);
+    }
+}
+
+void wave_ch_on(uint16_t wave_ch)
+{
+    if (wave_ch < WAVE_CH_MAX / 2)
+    {
+        HAL_GPIO_WritePin(HC4067_OUT1_EN_GPIO_Port, HC4067_OUT1_EN_Pin, GPIO_PIN_RESET);
+    }
+    else
+    {
+        HAL_GPIO_WritePin(HC4067_OUT2_EN_GPIO_Port, HC4067_OUT2_EN_Pin, GPIO_PIN_RESET);
+    }
+}
+
+void wave_ch_off(uint16_t wave_ch)
+{
+    if (wave_ch < WAVE_CH_MAX / 2)
+    {
+        HAL_GPIO_WritePin(HC4067_OUT1_EN_GPIO_Port, HC4067_OUT1_EN_Pin, GPIO_PIN_SET);
+    }
+    else
+    {
+        HAL_GPIO_WritePin(HC4067_OUT2_EN_GPIO_Port, HC4067_OUT2_EN_Pin, GPIO_PIN_SET);
+    }
 }
 
 void turn_on_adc_ch(uint16_t adc_ch)
